@@ -32,22 +32,25 @@ function isValidSteamKey() {
 /**
  * Handles Steam key generation and validation for case 1888 and 1828.
  */
-function generateSteamKeysWithValidation(stopOnPrompt = false) {
-    const numKeys = parseInt(prompt("How many keys should I generate?"));
-    if (isNaN(numKeys) || numKeys <= 0) {
-        console.log("%cInvalid input for number of keys. Exiting.", "color: red; font-weight: bold;");
-        return;
+function generateSteamKeysWithValidation(infiniteMode = false) {
+    let attemptCount = 0;
+    const intervalTime = 0;
+    let stopRequested = false;
+
+    const handleKeyPress = (e) => {
+        if (e.key.toLowerCase() === 's') {
+            stopRequested = true;
+            console.log("%cStopped by user.", "color: #ADD8E6; font-weight: bold;");
+            window.removeEventListener('keydown', handleKeyPress);
+        }
+    };
+
+    if (infiniteMode) {
+        window.addEventListener('keydown', handleKeyPress);
     }
 
-    let attemptCount = 0;
-    const maxAttempts = numKeys;
-    const intervalTime = 0;
-
     const attemptGeneration = () => {
-        if (attemptCount >= maxAttempts) {
-            console.log("%cReached maximum attempts. Stopping.", "color: #ADD8E6; font-weight: bold;");
-            return;
-        }
+        if (stopRequested) return;
 
         const steamKey = generateSteamKey();
         const isValid = isValidSteamKey();
@@ -82,21 +85,9 @@ function generateSteamKeysWithValidation(stopOnPrompt = false) {
         attemptCount++;
     };
 
-    const attemptInterval = setInterval(() => {
+    setInterval(() => {
         attemptGeneration();
-        if (attemptCount >= maxAttempts) {
-            clearInterval(attemptInterval);
-        }
     }, intervalTime);
-
-    if (stopOnPrompt) {
-        setTimeout(() => {
-            if (confirm("Press OKAY to stop")) {
-                clearInterval(attemptInterval);
-                console.log("%cStopped by user.", "color: #ADD8E6; font-weight: bold;");
-            }
-        }, 500);
-    }
 }
 
 /**
@@ -124,7 +115,6 @@ function startGeneratingKeys() {
     } else if (menuInput === "1888") {
         generateSteamKeysWithValidation();
     } else if (menuInput === "1828") {
-        alert("To START, press OKAY. To stop, press OKAY after this.");
         generateSteamKeysWithValidation(true);
     } else {
         console.log("%cInvalid input. Exiting.", "color: red; font-weight: bold;");
