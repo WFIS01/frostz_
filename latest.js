@@ -26,15 +26,13 @@ function generateSteamKey() {
  */
 function isValidSteamKey() {
     const errorDisplay = document.getElementById("error_display");
-    return !errorDisplay;  // If error_display doesn't exist, the key is valid
+    return !errorDisplay;
 }
 
 /**
- * Handles Steam key generation and validation for case 1888.
+ * Handles Steam key generation and validation for case 1888 and 1828.
  */
-function generateSteamKeysWithValidation() {
-    alert("PRESS OKAY ONCE YOU'RE ON STEAM!");
-
+function generateSteamKeysWithValidation(stopOnPrompt = false) {
     const numKeys = parseInt(prompt("How many keys should I generate?"));
     if (isNaN(numKeys) || numKeys <= 0) {
         console.log("%cInvalid input for number of keys. Exiting.", "color: red; font-weight: bold;");
@@ -43,28 +41,26 @@ function generateSteamKeysWithValidation() {
 
     let attemptCount = 0;
     const maxAttempts = numKeys;
-    const intervalTime = 0; // Fast key generation
+    const intervalTime = 0;
 
     const attemptGeneration = () => {
         if (attemptCount >= maxAttempts) {
             console.log("%cReached maximum attempts. Stopping.", "color: #ADD8E6; font-weight: bold;");
-            return;  // Stop after reaching the max number of keys
+            return;
         }
 
-        const steamKey = generateSteamKey();  // Generate a Steam key
-        const isValid = isValidSteamKey(); // Check if the key is valid
+        const steamKey = generateSteamKey();
+        const isValid = isValidSteamKey();
 
-        // Insert the generated Steam key into the wallet_code input box
         const walletInput = document.getElementById("wallet_code");
         if (walletInput) {
-            walletInput.value = steamKey; // Set the value of the input field
+            walletInput.value = steamKey;
         } else {
             console.error("Wallet input box not found.");
         }
 
-        // Attempt to redeem the key by running the redemption JavaScript function
         if (typeof RedeemWalletCode === "function") {
-            RedeemWalletCode();  // Call the Steam redemption function
+            RedeemWalletCode();
         } else {
             console.error("RedeemWalletCode function not found.");
         }
@@ -83,23 +79,30 @@ function generateSteamKeysWithValidation() {
             validityColor
         );
 
-        attemptCount++; // Increment the attempt count
+        attemptCount++;
     };
 
-    // Start generating keys at the specified interval
     const attemptInterval = setInterval(() => {
         attemptGeneration();
         if (attemptCount >= maxAttempts) {
-            clearInterval(attemptInterval);  // Stop the interval once we've reached the max attempts
+            clearInterval(attemptInterval);
         }
-    }, intervalTime);  // Fast generation
+    }, intervalTime);
+
+    if (stopOnPrompt) {
+        setTimeout(() => {
+            if (confirm("Press OKAY to stop")) {
+                clearInterval(attemptInterval);
+                console.log("%cStopped by user.", "color: #ADD8E6; font-weight: bold;");
+            }
+        }, 500);
+    }
 }
 
 /**
  * Generates keys based on the sequence ID.
  */
 function startGeneratingKeys() {
-    // Display New Splash Screen
     console.log(`%c  █████▒██▀███   ▒█████    ██████ ▄▄▄█████▓▒███████▒
 ▓██   ▒▓██ ▒ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒▒ ▒ ▒ ▄▀░
 ▒████ ░▓██ ░▄█ ▒▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░░ ▒ ▄▀▒░ 
@@ -115,21 +118,17 @@ function startGeneratingKeys() {
     const menuInput = prompt("Frostz Menu:");
 
     if (menuInput === "1827") {
-        // Run what 12 did (fast key generation)
         generateFastKeys();
     } else if (menuInput === "9282") {
-        // Run what 16 did (slower key generation)
         generateSlowerKeys();
-    } else if (menuInput === "holycdz") {
-        // Display HolyCDZ prompt
-        prompt("HolyCDZ:\n\nv0.1 by WFIS01");
     } else if (menuInput === "1888") {
-        // Run what 17 did (Steam key validation)
         generateSteamKeysWithValidation();
+    } else if (menuInput === "1828") {
+        alert("To START, press OKAY. To stop, press OKAY after this.");
+        generateSteamKeysWithValidation(true);
     } else {
         console.log("%cInvalid input. Exiting.", "color: red; font-weight: bold;");
     }
 }
 
-// Start generating keys based on user input
 startGeneratingKeys();
