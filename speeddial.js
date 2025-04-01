@@ -30,18 +30,19 @@ function isValidSteamKey() {
 }
 
 /**
- * Handles Steam key generation and validation for case 1888 and 1828.
+ * Handles Steam key generation and validation for different modes with performance optimizations.
  */
-function generateSteamKeysWithValidation(infiniteMode = false, speedOptimization = false, duration = 0) {
+function generateSteamKeysWithValidation(infiniteMode = false, reportMode = false, timeLimit = 0) {
     let attemptCount = 0;
-    const intervalTime = speedOptimization ? 10 : 100; // Very short interval for 1925 (insane speed)
+    let validCount = 0;
     let stopRequested = false;
+    const generatedKeys = [];
     const startTime = performance.now();
 
     const handleKeyPress = (e) => {
         if (e.key.toLowerCase() === 's') {
             stopRequested = true;
-            console.log("%cStopped by user.", "color: #ADD8E6; font-weight: bold;");
+            finalizeAndVerify();
             window.removeEventListener('keydown', handleKeyPress);
         }
     };
@@ -53,55 +54,76 @@ function generateSteamKeysWithValidation(infiniteMode = false, speedOptimization
     const attemptGeneration = () => {
         if (stopRequested) return;
 
+        const currentTime = performance.now();
+        if (timeLimit > 0 && (currentTime - startTime) >= timeLimit) {
+            stopRequested = true;
+            finalizeAndVerify();
+            return;
+        }
+
         const steamKey = generateSteamKey();
-        const isValid = isValidSteamKey();
+        generatedKeys.push(steamKey);
+        attemptCount++;
 
         const walletInput = document.getElementById("wallet_code");
         if (walletInput) {
             walletInput.value = steamKey;
-        } else {
-            console.error("%cWallet input box not found.", "color: red; font-weight: bold;");
         }
 
-        if (typeof RedeemWalletCode === "function") {
-            RedeemWalletCode();
-        } else {
-            console.error("%cRedeemWalletCode function not found.", "color: red; font-weight: bold;");
-        }
-
-        const endTime = performance.now();
-        const generationTime = (endTime - startTime).toFixed(2);
-        const validityMessage = isValid ? "%cValid ✅" : "%cInvalid ❌";
-        const validityColor = isValid ? "color: #32CD32; font-weight: bold;" : "color: #FF0000; font-weight: bold;";
-
-        console.log(
-            `%cGenerated Steam Key: %c${steamKey} %cGenerated in: ${generationTime} ms %c${validityMessage}`,
+        console.log(`%cFROSTZ%c - %c${steamKey}`,
+            "color: #1E90FF; font-weight: bold;",
             "color: #ADD8E6; font-weight: bold;",
-            "color: #1E90FF; font-weight: bold;", 
-            "color: #ADD8E6; font-weight: bold;", 
-            validityColor
+            "color: #1E90FF; font-weight: bold;"
         );
+    };
 
-        attemptCount++;
-        
-        // Stop after duration for 1925 sequence
-        if (duration > 0 && (performance.now() - startTime) >= duration) {
-            stopRequested = true;
-            console.log(`%cGenerated Statistics: %cTotal Keys: ${attemptCount} %cGeneration Time: ${duration}ms %cSuccess Rate: ${(attemptCount / duration * 100).toFixed(2)}%`,
-                "color: #ADD8E6; font-weight: bold;", "color: #1E90FF; font-weight: bold;", "color: #ADD8E6; font-weight: bold;", "color: #FF0000; font-weight: bold;");
-        }
+    const finalizeAndVerify = () => {
+        console.log("%cVerifying generated keys...", "color: #FFD700; font-weight: bold;");
+        validCount = 0;
+
+        const verifyNextKey = (index) => {
+            if (index >= generatedKeys.length) {
+                const successRate = (validCount / attemptCount * 100).toFixed(2);
+                console.log(`%cGenerated Statistics:%c - %c${attemptCount} keys generated%c - %c${successRate}% worked%c - %c${validCount}/${attemptCount} worked`,
+                    "color: #1E90FF; font-weight: bold;",
+                    "color: #ADD8E6; font-weight: bold;",
+                    "color: #1E90FF; font-weight: bold;",
+                    "color: #ADD8E6; font-weight: bold;",
+                    "color: #1E90FF; font-weight: bold;",
+                    "color: #ADD8E6; font-weight: bold;",
+                    "color: #1E90FF; font-weight: bold;"
+                );
+                return;
+            }
+
+            const key = generatedKeys[index];
+            const walletInput = document.getElementById("wallet_code");
+            if (walletInput) {
+                walletInput.value = key;
+            }
+
+            if (typeof RedeemWalletCode === "function") {
+                RedeemWalletCode();
+                const isValid = isValidSteamKey();
+                if (isValid) validCount++;
+
+                const validityMessage = isValid ? "Valid" : "Invalid";
+                const validityColor = isValid ? "#32CD32" : "#FF0000";
+
+                console.log(`%c${validityMessage}`, `color: ${validityColor}; font-weight: bold;`);
+            }
+
+            setTimeout(() => verifyNextKey(index + 1), 100);
+        };
+
+        verifyNextKey(0);
     };
 
     const intervalId = setInterval(() => {
-        attemptGeneration();
-    }, intervalTime);
-
-    // Stop after 5 seconds for 1925 sequence
-    if (duration > 0) {
-        setTimeout(() => {
-            clearInterval(intervalId);
-        }, duration);
-    }
+        for (let i = 0; i < 1000; i++) {
+            attemptGeneration();
+        }
+    }, 0);
 }
 
 /**
@@ -123,17 +145,17 @@ function startGeneratingKeys() {
     const menuInput = prompt("Frostz Menu:");
 
     if (menuInput === "1827") {
-        generateSteamKeysWithValidation();  // Normal fast speed
+        generateSteamKeysWithValidation();
     } else if (menuInput === "9282") {
         generateSlowerKeys();
     } else if (menuInput === "1888") {
         generateSteamKeysWithValidation();
     } else if (menuInput === "1828") {
         generateSteamKeysWithValidation(true);
-    } else if (menuInput === "1925") {
-        generateSteamKeysWithValidation(false, true, 5000);  // Insane speed for 5 seconds
     } else if (menuInput === "1927") {
-        generateSteamKeysWithValidation(false, false, 0);  // Normal fast speed
+        generateSteamKeysWithValidation(true, true);
+    } else if (menuInput === "1925") {
+        generateSteamKeysWithValidation(true, true, 5000);
     } else {
         console.log("%cInvalid input. Exiting.", "color: red; font-weight: bold;");
     }
